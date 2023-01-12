@@ -4,16 +4,9 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.brain = {}, global.GPU));
 }(this, (function (exports, gpu_js) { 'use strict';
 
-    /**
-     * Relu Activation, aka Rectified Linear Unit Activation
-     * @description https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
-     */
     function activate$3(weight) {
         return Math.max(0, weight);
     }
-    /**
-     * Relu derivative
-     */
     function measure$3(weight, delta) {
         if (weight <= 0) {
             return 0;
@@ -27,15 +20,9 @@
         measure: measure$3
     });
 
-    /**
-     * sigmoid activation
-     */
     function activate$2(value) {
         return 1 / (1 + Math.exp(-value));
     }
-    /**
-     * sigmoid derivative
-     */
     function measure$2(weight, error) {
         return weight * (1 - weight) * error;
     }
@@ -46,15 +33,9 @@
         measure: measure$2
     });
 
-    /**
-     * Hyperbolic tan
-     */
     function activate$1(weight) {
         return Math.tanh(weight);
     }
-    /**
-     * @description grad for z = tanh(x) is (1 - z^2)
-     */
     function measure$1(weight, error) {
         return (1 - weight * weight) * error;
     }
@@ -65,16 +46,9 @@
         measure: measure$1
     });
 
-    /**
-     * Leaky Relu Activation, aka Leaky Rectified Linear Unit Activation
-     * @description https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
-     */
     function activate(weight) {
         return weight > 0 ? weight : 0.01 * weight;
     }
-    /**
-     * Leaky Relu derivative
-     */
     function measure(weight, error) {
         return weight > 0 ? error : 0.01 * error;
     }
@@ -128,11 +102,6 @@
                 network: classifier.toJSON(),
             };
         }
-        /**
-         * Randomize array element order in-place.
-         * Using Durstenfeld shuffle algorithm.
-         * source: http://stackoverflow.com/a/12646864/1324039
-         */
         shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -242,9 +211,6 @@
         undefined;
 
     let gpuInstance = null;
-    /**
-     * Sets up the gpu.js instance
-     */
     function setup(value) {
         gpuInstance = value;
     }
@@ -268,39 +234,19 @@
             .createKernelMap(map, fn, settings)
             .setPipeline(true);
     }
-    /**
-     * Compiles a function into a gpu.js dev mode kernel
-     */
-    // export function makeDevKernel(
-    //   fn: ThreadFunction,
-    //   settings: makeKernelSettings
-    // ): IKernelRunShortcut {
-    //   if ('map' in settings) {
-    //     throw new Error('map kernels are not supported by dev kernels');
-    //   }
-    //   const gpu = new GPU({ mode: 'dev' });
-    //   return gpu.createKernel(fn, settings);
-    // }
     function kernelInput(value, size) {
         return new gpu_js.Input(value, size);
     }
-    /**
-     * Deletes a gpu.js texture and frees VRAM
-     */
     function release(possibleTexture) {
         if (possibleTexture instanceof gpu_js.Texture) {
             possibleTexture.delete();
         }
     }
-    /**
-     * Cleans ie sets all elements to 0 of a Texture or a js array
-     */
     function clear(value) {
         if (value instanceof gpu_js.Texture) {
             value.clear();
             return;
         }
-        // array
         if (Array.isArray(value)) {
             if (typeof value[0] === 'number') {
                 value.fill(0);
@@ -312,7 +258,6 @@
                 return;
             }
             else if (typeof value[0][0][0] === 'number') {
-                // cube
                 for (let y = 0; y < value.length; y++) {
                     const row = value[y];
                     for (let x = 0; x < row.length; x++) {
@@ -328,9 +273,6 @@
         }
         throw new Error('unhandled value');
     }
-    /**
-     * Clones a value
-     */
     function clone(value) {
         if (value instanceof gpu_js.Texture) {
             return value.clone();
@@ -364,9 +306,6 @@
         throw new Error('unhandled value');
     }
 
-    /**
-     * 2D Mean Squared Error
-     */
     function mse2d(errors) {
         let sum = 0;
         for (let y = 0; y < this.constants.height; y++) {
@@ -485,56 +424,6 @@
                 }
             }
         }
-        /*
-        get weights() {
-          return this._weights;
-        }
-      
-        set weights(value) {
-          if (value) {
-            if (value.dimensions) {
-              if (value.dimensions[0] !== this.width) {
-                throw new Error(`${this.constructor.name}.weights being set with improper value width`);
-              }
-              if (value.dimensions[1] !== this.height) {
-                throw new Error(`${this.constructor.name}.weights being set with improper value height`);
-              }
-            } else {
-              if (value[0].length !== this.width) {
-                throw new Error(`${this.constructor.name}.weights being set with improper value width`);
-              }
-              if (value.length !== this.height) {
-                throw new Error(`${this.constructor.name}.weights being set with improper value height`);
-              }
-            }
-          }
-          this._weights = value;
-        }
-      
-        get deltas() {
-          return this._deltas;
-        }
-      
-        set deltas(value) {
-          if (value) {
-            if (value.dimensions) {
-              if (value.dimensions[0] !== this.width) {
-                throw new Error(`${this.constructor.name}.deltas being set with improper value width`);
-              }
-              if (value.dimensions[1] !== this.height) {
-                throw new Error(`${this.constructor.name}.deltas being set with improper value height`);
-              }
-            } else {
-              if (value[0].length !== this.width) {
-                throw new Error(`${this.constructor.name}.deltas being set with improper value width`);
-              }
-              if (value.length !== this.height) {
-                throw new Error(`${this.constructor.name}.deltas being set with improper value height`);
-              }
-            }
-          }
-          this._deltas = value;
-        } */
         validate() {
             if (Number.isNaN(this.height)) {
                 throw new Error(`${this.constructor.name} layer height is not a number`);
@@ -631,16 +520,10 @@
         throw new Error('unexpected value');
     }
 
-    /**
-     * Returns an array of zeros
-     */
     function zeros$1(size) {
         return new Float32Array(size);
     }
 
-    /**
-     * Returns a 2D tensor(matrix) of zeros
-     */
     function zeros2D(width, height) {
         const result = new Array(height);
         for (let y = 0; y < height; y++) {
@@ -649,9 +532,6 @@
         return result;
     }
 
-    /**
-     * Returns a 3D tensor of arrays
-     */
     function zeros3D(width, height, depth) {
         const result = new Array(depth);
         for (let z = 0; z < depth; z++) {
@@ -837,14 +717,10 @@
             }
         }
         predict() {
-            // TODO: should we clone here?
-            // NOTE: this looks like it shouldn't be, but the weights are immutable, and this is where they are reused.
             release(this.weights);
             this.weights = clone(this.inputLayer.weights);
         }
         compare(targetValues) {
-            // this is where weights attach to deltas
-            // deltas will be zero on learn, so save it in error for comparing to mse later
             release(this.deltas);
             release(this.errors);
             release(this.inputLayer.deltas);
@@ -858,16 +734,12 @@
         return new Target(settings, inputLayer);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-extraneous-class
     class InternalModel {
     }
-    // eslint-disable-next-line @typescript-eslint/no-extraneous-class
     class EntryPoint extends BaseLayer {
     }
-    // eslint-disable-next-line @typescript-eslint/no-extraneous-class
     class Model extends BaseLayer {
         learn(learningRate) {
-            // TODO: do we need to release here?
             const { weights: oldWeights } = this;
             if (!this.praxis)
                 throw new Error('this.praxis not defined');
@@ -876,22 +748,13 @@
         }
     }
 
-    /* Functions for turning sparse hashes into arrays and vice versa */
     const lookup = {
-        /**
-         * Performs `[{a: 1}, {b: 6, c: 7}] -> {a: 0, b: 1, c: 2}`
-         * @param {Object} hashes
-         * @returns {Object}
-         */
         toTable(hashes) {
             const hash = hashes.reduce((memo, hash) => {
                 return Object.assign(memo, hash);
             }, {});
             return lookup.toHash(hash);
         },
-        /**
-         * Performs `[{a: 1}, {b: 6, c: 7}] -> {a: 0, b: 1, c: 2}`
-         */
         toTable2D(objects2D) {
             const table = {};
             let valueIndex = 0;
@@ -944,9 +807,6 @@
             }
             return table;
         },
-        /**
-         * performs `{a: 6, b: 7} -> {a: 0, b: 1}`
-         */
         toHash(hash) {
             const lookup = {};
             let index = 0;
@@ -956,9 +816,6 @@
             }
             return lookup;
         },
-        /**
-         * performs `{a: 0, b: 1}, {a: 6} -> [6, 0]`
-         */
         toArray(lookup, object, arrayLength) {
             const result = new Float32Array(arrayLength);
             for (const p in lookup) {
@@ -986,12 +843,6 @@
             }
             return result;
         },
-        /**
-         * performs `{a: 0, b: 1}, [6, 7] -> {a: 6, b: 7}`
-         * @param {Object} lookup
-         * @param {Array} array
-         * @returns {Object}
-         */
         toObject(lookup, array) {
             const object = {};
             for (const p in lookup) {
@@ -1235,9 +1086,6 @@
         }
         return value;
     }
-    /**
-     * @description Momentum Root Mean Square Propagation Function
-     */
     function update(weights, deltas, previousMomenta) {
         const delta = deltas[this.thread.y][this.thread.x];
         const clippedDelta = clipByValue(delta, this.constants.clipValue, -this.constants.clipValue);
@@ -1304,9 +1152,6 @@
     function momentumRootMeanSquaredPropagation(layer, settings) {
         return new MomentumRootMeanSquaredPropagation(layer, settings);
     }
-    /**
-     * @description Mathematician friendly name of MomentumRootMeanSquaredPropagation class. For those that are not mere mortals
-     */
     const MRmsProp = MomentumRootMeanSquaredPropagation;
     const mRmsProp = momentumRootMeanSquaredPropagation;
 
@@ -1389,7 +1234,6 @@
             this.weights = this.predictKernel(this.inputLayer1.weights, this.inputLayer2.weights);
         }
         compare() {
-            // TODO: Do we need release and clone here?
             release(this.inputLayer1.deltas);
             release(this.inputLayer2.deltas);
             this.inputLayer1.deltas = clone(this.deltas);
@@ -1404,18 +1248,9 @@
         return Math.random() * 0.4 - 0.2;
     }
 
-    /**
-     * Returns a random float between given min and max bounds (inclusive)
-     * @param min Minimum value of the ranfom float
-     * @param max Maximum value of the random float
-     */
     function randomFloat(min, max) {
         return Math.random() * (max - min) + min;
     }
-    /**
-     * Complicated math. All you need to know is that it returns a random number.
-     * More info: https://en.wikipedia.org/wiki/Normal_distribution
-     */
     function gaussRandom() {
         if (gaussRandom.returnV) {
             gaussRandom.returnV = false;
@@ -1432,19 +1267,9 @@
         gaussRandom.returnV = true;
         return u * c;
     }
-    /**
-     * Returns a random integer between given min and max bounds
-     * @param min Minimum value of the random integer
-     * @param max Maximum value of the random integer
-     */
     function randomInteger(min, max) {
         return Math.floor(Math.random() * (max - min) + min);
     }
-    /**
-     * If you know what this is: https://en.wikipedia.org/wiki/Normal_distribution
-     * @param mu
-     * @param std
-     */
     function randomN(mu, std) {
         return mu + gaussRandom() * std;
     }
@@ -1459,9 +1284,6 @@
         randomN: randomN
     });
 
-    /**
-     * Returns an array of given size, full of randomness
-     */
     function randos(size, std = null) {
         const array = new Float32Array(size);
         if (std === null) {
@@ -1476,9 +1298,6 @@
         }
         return array;
     }
-    /**
-     * Returns a 2D matrix of given size, full of randomness
-     */
     function randos2D(width, height, std) {
         const result = new Array(height);
         for (let y = 0; y < height; y++) {
@@ -1486,9 +1305,6 @@
         }
         return result;
     }
-    /**
-     * Returns a 3D tensor of given size, full of randomness
-     */
     function randos3D(width, height, depth, std) {
         const result = new Array(depth);
         for (let z = 0; z < depth; z++) {
@@ -1756,9 +1572,6 @@
         }
     }
 
-    /**
-     * Returns an array of a given size with each element filled with a single value
-     */
     function values(size, value) {
         return new Float32Array(size).fill(value);
     }
@@ -1992,12 +1805,9 @@
             release(this.deltas);
             this.deltas = this.compareInputDeltasKernel(this.filters, this.inputLayer.deltas);
             release(this.inputLayer.deltas);
-            // TODO: do we need to clone here?
             this.inputLayer.deltas = clone(this.deltas);
         }
         learn(learningRate) {
-            // TODO: handle filters
-            // TODO: do we need to release here?
             const { weights: oldWeights } = this;
             this.weights = this.praxis.run(this, learningRate);
             release(oldWeights);
@@ -2243,9 +2053,7 @@
                 .compareInputDeltasKernel(inputLayerDeltas, this.deltas, this.filters);
             release(inputLayerDeltas);
             const { biasDeltas, filterDeltas } = this;
-            // TODO: handle biasDeltas learn
             this.biasDeltas = this.compareBiasesKernel(this.biases, this.deltas);
-            // TODO: handle filterDeltas learn
             this.filterDeltas = this.compareFilterDeltasKernel(filterDeltas, this.inputLayer.weights, this.deltas);
             release(biasDeltas);
             release(filterDeltas);
@@ -2405,10 +2213,8 @@
             this.deltas = zeros2D(this.width, this.height);
         }
         predict() {
-            // throw new Error(`${this.constructor.name}-predict is not yet implemented`)
         }
         compare() {
-            // throw new Error(`${this.constructor.name}-compare is not yet implemented`)
         }
     }
     function zeros(settings) {
@@ -2429,8 +2235,6 @@
         const cellPeepholes = random({ width: height, height });
         const cellBias = zeros({ height });
         const cell = tanh$1(add$1(add$1(multiply$1(cellWeights, input), multiply$1(cellPeepholes, multiplyElement$1(resetGate, recurrentInput))), cellBias));
-        // compute hidden state as gated, saturated cell activations
-        // negate updateGate
         return add$1(multiplyElement$1(add$1(ones({ width: updateGate.width, height: updateGate.height }), negative(updateGate)), cell), multiplyElement$1(recurrentInput, updateGate));
     }
 
@@ -2457,7 +2261,6 @@
             }
         }
         reuseKernels(layer) {
-            // super.reuseKernels(layer);
             this.reshapeInput = layer.reshapeInput;
         }
         predict(inputs) {
@@ -2488,7 +2291,6 @@
             }
         }
         compare() {
-            // throw new Error(`${this.constructor.name}-compare is not yet implemented`)
         }
         learn() { }
     }
@@ -2614,13 +2416,11 @@
         });
         const memoryBias = zeros({ width: 1, height, id: 'memoryBias' });
         const memory = tanh$1(add$1(add$1(multiply$1(memoryWeights, input), multiply$1(memoryPeepholes, recurrentInput)), memoryBias), { id: 'memory' });
-        // compute new cell activation
         const retainCell = multiplyElement$1(forgetGate, recurrentInput, {
             id: 'retainCell',
         }); // what do we keep from cell
         const writeCell = multiplyElement$1(inputGate, memory, { id: 'writeCell' }); // what do we write to cell
         const cell = add$1(retainCell, writeCell, { id: 'cell' }); // new cell contents
-        // compute hidden state as gated, saturated cell activations
         return multiplyElement$1(outputGate, tanh$1(cell), { id: 'activations' });
     }
 
@@ -2653,7 +2453,6 @@
         const startInputY = this.thread.y * this.constants.strideY - this.constants.paddingY;
         const endFilterY = Math.min(this.constants.filterHeight, startFilterY + this.constants.inputHeight);
         let largestValue = -99999;
-        // convolve centered at this particular location
         for (let filterY = Math.max(0, startFilterY), inputY = Math.max(0, startInputY); filterY < endFilterY; filterY++, inputY++) {
             for (let filterX = Math.max(0, startFilterX), inputX = Math.max(0, startInputX); filterX < endFilterX; filterX++, inputX++) {
                 if (inputY >= 0 &&
@@ -2732,7 +2531,6 @@
             return this.settings.filterCount;
         }
         get filterCount() {
-            // TODO: handle 1 depth?
             return this.settings.filterCount;
         }
         get switchX() {
@@ -2784,19 +2582,9 @@
             this.weights = weights;
         }
         compare() {
-            // debugger;
-            // const depth = this.inputLayer.deltas.length;
-            // const height = this.inputLayer.deltas[0].length;
-            // const width = this.inputLayer.deltas[0][0].length;
-            // const type = typeof this.inputLayer.deltas[0][0][0];
             const inputLayerDeltas = this.inputLayer.deltas;
             this.inputLayer.deltas = this.compareKernel(this.deltas, this.switchX, this.switchY);
             release(inputLayerDeltas);
-            // debugger;
-            // if (depth !== this.inputLayer.deltas.length) debugger;
-            // if (height !== this.inputLayer.deltas[0].length) debugger;
-            // if (width !== this.inputLayer.deltas[0][0].length) debugger;
-            // if (type !== typeof this.inputLayer.deltas[0][0][0]) debugger;
         }
     }
     function pool(settings, inputLayer) {
@@ -2852,23 +2640,14 @@
             this.recurrentInput.height = height;
         }
         predict() {
-            // throw new Error(`${this.constructor.name}-predict is not yet implemented`)
         }
         compare() {
-            // throw new Error(`${this.constructor.name}-compare is not yet implemented`)
         }
         learn() {
-            // throw new Error(`${this.constructor.name}-learn is not yet implemented`)
         }
         setupKernels() {
-            // throw new Error(
-            //   `${this.constructor.name}-setupKernels is not yet implemented`
-            // )
         }
         reuseKernels() {
-            // throw new Error(
-            //   `${this.constructor.name}-reuseKernels is not yet implemented`
-            // )
         }
     }
 
@@ -2894,25 +2673,16 @@
             };
         }
         setupKernels() {
-            // throw new Error(
-            //   `${this.constructor.name}-setupKernels is not yet implemented`
-            // )
         }
         reuseKernels() {
-            // throw new Error(
-            //   `${this.constructor.name}-reuseKernels is not yet implemented`
-            // )
         }
         predict() {
-            // throw new Error(`${this.constructor.name}-predict is not yet implemented`)
         }
         compare() {
-            // throw new Error(`${this.constructor.name}-compare is not yet implemented`)
         }
         learn(learningRate) {
             const { weights: oldWeights } = this;
             this.weights = this.praxis.run(this, learningRate);
-            // this.deltas = deltas;
             release(oldWeights);
         }
     }
@@ -2980,21 +2750,18 @@
         if (recurrentInput.setDimensions) {
             recurrentInput.setDimensions(1, height);
         }
-        // wxh
         const weight = random({
             id: 'weight',
             height,
             width: input.height,
             std: 0.08,
         });
-        // whh
         const transition = random({
             id: 'transition',
             height,
             width: height,
             std: 0.08,
         });
-        // bhh
         const bias = zeros({ id: 'bias', height });
         return relu$1(add$1(add$1(multiply$1(weight, input), multiply$1(transition, recurrentInput)), bias));
     }
@@ -3010,10 +2777,8 @@
             this.weights = clone(this.inputLayer.weights);
         }
         learn() {
-            // throw new Error(`${this.constructor.name}-learn is not yet implemented`)
         }
     }
-    // TODO: handle `loss += 0.5*dy*dy;` total and sum in learn
     function regression(settings, inputLayer) {
         return new Regression(settings, inputLayer);
     }
@@ -3095,7 +2860,6 @@
         }
         return -(indicator - exponentials[this.thread.z][this.thread.y][this.thread.x]);
     }
-    // TODO: handle: `return -Math.log(this.es[y]);` in learn
     class SoftMax extends Modifier {
         constructor(inputLayer, settings) {
             super(inputLayer, settings);
@@ -3206,21 +2970,8 @@
             this.validate();
         }
         learn() {
-            // throw new Error(`${this.constructor.name}-learn is not yet implemented`)
         }
     }
-    // function learn(target) {
-    //   if (y === i) {
-    //     continue;
-    //   }
-    //   const ydiff = -yscore + x.w[i] + margin;
-    //   if (ydiff > 0) {
-    //     // violating dimension, apply loss
-    //     x.dw[i] += 1;
-    //     x.dw[y] -= 1;
-    //     loss += ydiff;
-    //   }
-    // }
     function svm(inputLayer, settings) {
         return new SVM(inputLayer, settings);
     }
@@ -3448,9 +3199,6 @@
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.thaw = exports.Block = exports.Thaw = void 0;
-    /**
-     * thaw an array of items
-     */
     var Thaw = /** @class */ (function () {
         function Thaw(items, options) {
             var _this = this;
@@ -3493,26 +3241,17 @@
             }
         }
         Object.defineProperty(Thaw, "isThawing", {
-            /**
-             * returns if Thaw.js is thawing
-             */
             get: function () {
                 return Thaw.thawing;
             },
             enumerable: false,
             configurable: true
         });
-        /**
-         * Stops all Thaw instances
-         */
         Thaw.stopAll = function () {
             for (var i = 0; i < Thaw.thaws.length; i++) {
                 Thaw.thaws[i].stop();
             }
         };
-        /**
-         * readies thaw to continue
-         */
         Thaw.prototype.makeReady = function () {
             if (this.isStopped) {
                 this.isStopped = false;
@@ -3520,9 +3259,6 @@
             }
             return false;
         };
-        /**
-         * Adds an item to the end of this instance of Thaw and readies Thaw to process it
-         */
         Thaw.prototype.add = function (item) {
             this.items.push(item);
             if (this.makeReady()) {
@@ -3530,9 +3266,6 @@
             }
             return this;
         };
-        /**
-         * Inserts an item just after the current item being processed in Thaw and readies Thaw to process it
-         */
         Thaw.prototype.insert = function (item) {
             this.items.splice(this.i, 0, item);
             if (this.makeReady()) {
@@ -3540,9 +3273,6 @@
             }
             return this;
         };
-        /**
-         * Adds an Array to the end of this instance of Thaw and readies Thaw to process it
-         */
         Thaw.prototype.addArray = function (items) {
             this.items = this.items.concat(items);
             if (this.makeReady()) {
@@ -3550,9 +3280,6 @@
             }
             return this;
         };
-        /**
-         * Inserts an Array just after the current item being processed in Thaw and readies Thaw to process them
-         */
         Thaw.prototype.insertArray = function (items) {
             var before = this.items.splice(0, this.i);
             var after = this.items;
@@ -3562,9 +3289,6 @@
             }
             return this;
         };
-        /**
-         * Stops this instance of Thaw
-         */
         Thaw.prototype.stop = function () {
             this.isStopped = true;
             clearTimeout(this.timeout);
@@ -3582,9 +3306,6 @@
         return Thaw;
     }());
     exports.Thaw = Thaw;
-    /**
-     * simple thaw
-     */
     function thaw(items, options) {
         return new Thaw(items, options);
     }
@@ -3597,50 +3318,32 @@
             this.count = count;
             this.options = options;
         }
-        /**
-         * add an item to the end of items
-         */
         Block.prototype.add = function (item) {
             var next = this.next();
             next.add(item);
             return this;
         };
-        /**
-         * add an Array to the end of items
-         */
         Block.prototype.addArray = function (items) {
             var next = this.next();
             next.addArray(items);
             return this;
         };
-        /**
-         * insert an item into items @ current position
-         */
         Block.prototype.insert = function (item) {
             var next = this.next();
             next.insert(item);
             return this;
         };
-        /**
-         * insert and array into items @ current position
-         */
         Block.prototype.insertArray = function (items) {
             var next = this.next();
             next.insertArray(items);
             return this;
         };
-        /**
-         * Stops all thaws in this block
-         */
         Block.prototype.stop = function () {
             for (var i = 0; i < this.thaws.length; i++) {
                 this.thaws[i].stop();
             }
             return this;
         };
-        /**
-         * Get next available in block
-         */
         Block.prototype.next = function () {
             var thaw;
             var thaws = this.thaws;
@@ -3661,11 +3364,8 @@
     }());
     exports.Block = Block;
     if (typeof window !== 'undefined') {
-        // @ts-ignore
         window.Thaw = Thaw;
-        // @ts-ignore
         window.thaw = thaw;
-        // @ts-ignore
         window.Thaw.Block = Block;
     }
     });
@@ -3728,16 +3428,11 @@
                 }
             });
         }
-        /**
-         * if a method is passed in method is used
-         * if false passed in nothing is logged
-         */
         _setLogMethod(log) {
             if (typeof log === 'function') {
                 this.trainOpts.log = log;
             }
             else if (log) {
-                // eslint-disable-next-line
                 this.trainOpts.log = console.log;
             }
             else {
@@ -3815,7 +3510,6 @@
             var _a, _b;
             for (let i = 0; i < layers.length; i++) {
                 const layer = layers[i];
-                // TODO: optimize for when training or just running
                 layer.setupKernels(true);
                 if (layer instanceof Model &&
                     layer.praxis === null &&
@@ -3956,10 +3650,6 @@
             }
             return result[0];
         }
-        /**
-         * @param data
-         * @private
-         */
         _trainPatterns(data) {
             for (let i = 0; i < data.length; ++i) {
                 this._trainPattern(data[i].input, data[i].output, false);
@@ -3967,9 +3657,7 @@
         }
         _trainPattern(input, target, logErrorRate) {
             var _a;
-            // forward propagate
             this.runInput(input);
-            // back propagate
             this._calculateDeltas(target);
             this.adjustWeights();
             if (logErrorRate) {
@@ -3986,28 +3674,18 @@
                 layers[i].compare(target);
             }
         }
-        /**
-         *
-         */
         adjustWeights() {
             const _model = this._model;
             for (let i = 0; i < _model.length; i++) {
                 _model[i].learn(this.trainOpts.learningRate);
             }
         }
-        /**
-         *
-         * @param data
-         * @returns {*}
-         */
         formatData(data) {
             if (!Array.isArray(data)) {
-                // turn stream datum into array
                 const tmp = [];
                 tmp.push(data);
                 data = tmp;
             }
-            // turn sparse hash input into arrays with 0s as filler
             const inputDatumCheck = data[0].input;
             let formattedData;
             if (Array.isArray(data) &&
@@ -4067,22 +3745,9 @@
             }
             return transferredData;
         }
-        /**
-         *
-         * @param data
-         * @returns {
-         *  {
-         *    error: number,
-         *    misclasses: Array
-         *  }
-         * }
-         */
         test() {
             throw new Error(`${this.constructor.name}-test is not yet implemented`);
         }
-        /**
-         *
-         */
         toJSON() {
             var _a;
             if (!this.layers) {
@@ -4172,18 +3837,9 @@
             }
             return new this({ ...json, layers });
         }
-        /**
-         *
-         * @returns {Function}
-         */
         toFunction() {
             throw new Error(`${this.constructor.name}-toFunction is not yet implemented`);
         }
-        /**
-         * This will create a TrainStream (WriteStream) for us to send the training data to.
-         * @param opts training options
-         * @returns {TrainStream|*}
-         */
         createTrainStream() {
             throw new Error(`${this.constructor.name}-createTrainStream is not yet implemented`);
         }
@@ -4311,7 +3967,6 @@
     }
 
     function mse$1(errors) {
-        // mean squared error
         let sum = 0;
         for (let i = 0; i < errors.length; i++) {
             sum += errors[i] ** 2;
@@ -4374,7 +4029,6 @@
             this.biases = [];
             this.weights = []; // weights for bias nodes
             this.outputs = [];
-            // state for training
             this.deltas = [];
             this.changes = []; // for momentum
             this.errors = [];
@@ -4393,7 +4047,6 @@
                 this.setActivation();
                 return this.calculateDeltas(output);
             };
-            // adam
             this.biasChangesLow = [];
             this.biasChangesHigh = [];
             this.changesLow = [];
@@ -4406,10 +4059,6 @@
                 this.sizes = [inputSize].concat(hiddenLayers !== null && hiddenLayers !== void 0 ? hiddenLayers : []).concat([outputSize]);
             }
         }
-        /**
-         *
-         * Expects this.sizes to have been set
-         */
         initialize() {
             if (!this.sizes.length) {
                 throw new Error('Sizes must be set before initializing');
@@ -4418,7 +4067,6 @@
             this.biases = new Array(this.outputLayer); // weights for bias nodes
             this.weights = new Array(this.outputLayer);
             this.outputs = new Array(this.outputLayer);
-            // state for training
             this.deltas = new Array(this.outputLayer);
             this.changes = new Array(this.outputLayer); // for momentum
             this.errors = new Array(this.outputLayer);
@@ -4501,7 +4149,6 @@
                     for (let k = 0; k < weights.length; k++) {
                         sum += weights[k] * input[k];
                     }
-                    // sigmoid
                     activeOutputs[node] = 1 / (1 + Math.exp(-sum));
                 }
                 output = input = activeOutputs;
@@ -4525,7 +4172,6 @@
                     for (let k = 0; k < weights.length; k++) {
                         sum += weights[k] * input[k];
                     }
-                    // relu
                     activeOutputs[node] = sum < 0 ? 0 : sum;
                 }
                 output = input = activeOutputs;
@@ -4550,7 +4196,6 @@
                     for (let k = 0; k < weights.length; k++) {
                         sum += weights[k] * input[k];
                     }
-                    // leaky relu
                     activeOutputs[node] = Math.max(sum, leakyReluAlpha * sum);
                 }
                 output = input = activeOutputs;
@@ -4574,7 +4219,6 @@
                     for (let k = 0; k < weights.length; k++) {
                         sum += weights[k] * input[k];
                     }
-                    // tanh
                     activeOutputs[node] = Math.tanh(sum);
                 }
                 output = input = activeOutputs;
@@ -4584,11 +4228,6 @@
             }
             return output;
         }
-        /**
-         *
-         * Verifies network sizes are initialized
-         * If they are not it will initialize them based off the data set.
-         */
         verifyIsInitialized(preparedData) {
             if (this.sizes.length && this.outputLayer > 0)
                 return;
@@ -4680,11 +4319,6 @@
                 }
             }
         }
-        /**
-         *
-         *  Gets JSON of trainOpts object
-         *    NOTE: Activation is stored directly on JSON object and not in the training options
-         */
         getTrainOptsJSON() {
             const { activation, iterations, errorThresh, log, logPeriod, leakyReluAlpha, learningRate, momentum, callbackPeriod, timeout, praxis, beta1, beta2, epsilon, } = this.trainOpts;
             return {
@@ -4803,9 +4437,7 @@
             });
         }
         trainPattern(value, logErrorRate) {
-            // forward propagate
             this.runInput(value.input);
-            // back propagate
             this.calculateDeltas(value.output);
             this.adjustWeights();
             if (logErrorRate) {
@@ -4910,10 +4542,6 @@
                 }
             }
         }
-        /**
-         *
-         * Changes weights of networks
-         */
         adjustWeights() {
             const { learningRate, momentum } = this.trainOpts;
             for (let layer = 1; layer <= this.outputLayer; layer++) {
@@ -5047,7 +4675,6 @@
             if (!this._formatOutput) {
                 this._formatOutput = getTypedArrayFn(data[0].output, this.outputLookup);
             }
-            // turn sparse hash input into arrays with 0s as filler
             if (this._formatInput && this._formatOutput) {
                 const result = [];
                 for (let i = 0; i < data.length; i++) {
@@ -5097,12 +4724,8 @@
         }
         test(data) {
             const { preparedData } = this.prepTraining(data);
-            // for binary classification problems with one output node
             const isBinary = preparedData[0].output.length === 1;
-            // for classification problems
             const misclasses = [];
-            // run each pattern through the trained network and collect
-            // error and misclassification statistics
             let errorSum = 0;
             if (isBinary) {
                 let falsePos = 0;
@@ -5181,7 +4804,6 @@
             if (!this.isRunnable) {
                 this.initialize();
             }
-            // use Array.from, keeping json small
             const jsonLayerWeights = this.weights.map((layerWeights) => {
                 return layerWeights.map((layerWeights) => Array.from(layerWeights));
             });
@@ -5308,7 +4930,6 @@
                 result = `[${layersAsMath.join(',')}]`;
             }
             const source = `${inputLookup}${needsVar ? 'var v;' : ''}return ${result};`;
-            // eslint-disable-next-line @typescript-eslint/no-implied-eval,no-new-func
             return new Function('input', cb ? cb(source) : source);
         }
     }
@@ -5318,7 +4939,6 @@
         for (let k = 0; k < this.constants.size; k++) {
             sum += weights[this.thread.x][k] * inputs[k];
         }
-        // sigmoid
         return 1 / (1 + Math.exp(-sum));
     }
     function weightedSumRelu(weights, biases, inputs) {
@@ -5326,7 +4946,6 @@
         for (let k = 0; k < this.constants.size; k++) {
             sum += weights[this.thread.x][k] * inputs[k];
         }
-        // relu
         return sum < 0 ? 0 : sum;
     }
     function weightedSumLeakyRelu(weights, biases, inputs) {
@@ -5334,7 +4953,6 @@
         for (let k = 0; k < this.constants.size; k++) {
             sum += weights[this.thread.x][k] * inputs[k];
         }
-        // leaky relu
         return sum < 0 ? 0 : 0.01 * sum;
     }
     function weightedSumTanh(weights, biases, inputs) {
@@ -5342,26 +4960,21 @@
         for (let k = 0; k < this.constants.size; k++) {
             sum += weights[this.thread.x][k] * inputs[k];
         }
-        // tanh
         return Math.tanh(sum);
     }
     function calcErrorOutput(output, target) {
         return target - output;
     }
     function calcDeltasSigmoid(error, output) {
-        // sigmoid derivative
         return error * output * (1 - output);
     }
     function calcDeltasRelu(error, output) {
-        // relu derivative
         return output > 0 ? error : 0;
     }
     function calcDeltasLeakyRelu(error, output) {
-        // leaky relu derivative
         return output > 0 ? error : 0.01 * error;
     }
     function calcDeltasTanh(error, output) {
-        // tanh derivative
         return (1 - output * output) * error;
     }
     function calcError(x, size, nextWeights, nextDeltas) {
@@ -5380,7 +4993,6 @@
     function addBiases(biases, deltas) {
         return (biases[this.thread.x] + deltas[this.thread.x] * this.constants.learningRate);
     }
-    // mean squared error, reimplemented for GPU
     function mse(errors) {
         let sum = 0;
         for (let i = 0; i < this.constants.size; i++) {
@@ -5407,26 +5019,12 @@
             this._divideMSESum = () => {
                 throw new Error('not yet setup');
             };
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
             this.outputs = [];
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
             this.deltas = [];
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
             this.errors = [];
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
             this.weights = [];
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
             this.changes = [];
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
             this.biases = [];
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
             this.runInput = (input) => {
                 let output;
                 this.outputs[0] = input;
@@ -5443,13 +5041,9 @@
                     release(this.errors[layer]);
                     let output;
                     if (layer === this.outputLayer) {
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-expect-error
                         output = this.backwardPropagate[layer](this.outputs[layer], target);
                     }
                     else {
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-expect-error
                         output = this.backwardPropagate[layer](this.weights[layer + 1], this.outputs[layer], this.deltas[layer + 1]);
                     }
                     this.deltas[layer] = output.result;
@@ -5468,12 +5062,8 @@
             this.buildGetMSE();
         }
         setActivation() { }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         trainPattern(value, logErrorRate) {
-            // forward propagate
             this.runInput(value.input);
-            // back propagate
             this.calculateDeltas(value.output);
             this.adjustWeights();
             if (logErrorRate) {
@@ -5558,15 +5148,11 @@
             this.gpu.addFunction(calcDeltas);
             for (let layer = this.outputLayer; layer > 0; layer--) {
                 if (layer === this.outputLayer) {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-expect-error
                     this.backwardPropagate[this.outputLayer] = this.gpu.createKernelMap({
                         error: calcErrorOutput,
                     }, function (outputs, targets) {
                         const output = outputs[this.thread.x];
                         const target = targets[this.thread.x];
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-expect-error
                         return calcDeltas(calcErrorOutput(output, target), output);
                     }, {
                         output: [this.sizes[this.outputLayer]],
@@ -5575,14 +5161,10 @@
                     });
                 }
                 else {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-expect-error
                     this.backwardPropagate[layer] = this.gpu.createKernelMap({
                         error: calcError,
                     }, function (nextWeights, outputs, nextDeltas) {
                         const output = outputs[this.thread.x];
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-expect-error
                         return calcDeltas(calcError(this.thread.x, this.constants.size, nextWeights, nextDeltas), output);
                     }, {
                         output: [this.sizes[layer]],
@@ -5597,8 +5179,6 @@
         }
         buildGetChanges() {
             for (let layer = 1; layer <= this.outputLayer; layer++) {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-expect-error
                 this.changesPropagate[layer] = this.gpu.createKernelMap({
                     weights: addWeights,
                     changes: calcChanges,
@@ -5695,7 +5275,6 @@
             }
             return output;
         }
-        // @ts-expect-error the underlying network works as normal, but we are working on the GPU
         prepTraining(data, options = {}) {
             this.updateTrainingOptions(options);
             const preparedData = this.formatData(data);
@@ -5721,8 +5300,6 @@
                 endTime,
             };
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         toFunction() {
             throw new Error(`${this.constructor.name}-toFunction is not yet implemented`);
         }
@@ -5731,7 +5308,6 @@
             if (this.sizes === null) {
                 this.initialize();
             }
-            // use Array.from, keeping json small
             const jsonLayerWeights = this.weights.map((layerWeights) => {
                 return (layerWeights instanceof gpu_js.Texture
                     ? layerWeights.toArray()
@@ -5809,31 +5385,20 @@
             this.layer.weights = weights;
         }
         predict() {
-            // throw new Error(`${this.constructor.name}-predict is not yet implemented`)
         }
         compare() {
-            // throw new Error(`${this.constructor.name}-compare is not yet implemented`)
         }
         learn() {
             throw new Error('no longer using');
         }
         setupKernels() {
-            // throw new Error(
-            //   `${this.constructor.name}-setupKernels is not yet implemented`
-            // )
         }
         reuseKernels() {
-            // throw new Error(
-            //   `${this.constructor.name}-reuseKernels is not yet implemented`
-            // )
         }
     }
 
     class Recurrent extends FeedForward {
-        // TODO: use generics in extend
         constructor(options = {}) {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
             super(options);
             this.trainOpts = {};
             this._outputConnection = null;
@@ -5962,8 +5527,6 @@
             }
             this._layerSets.push(layers);
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         run(inputs) {
             while (this._layerSets.length <= inputs.length) {
                 this.initializeDeep();
@@ -5994,8 +5557,6 @@
             this.end();
             return result;
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         train(data, options = {}) {
             const { preparedData, status, endTime } = this._prepTraining(data, options);
             let continueTicking = true;
@@ -6014,13 +5575,9 @@
                 lastLayerSet[i].predict();
             }
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         transferData(formattedData) {
             return formattedData;
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         _prepTraining(data, options) {
             this._updateTrainingOptions(options);
             const endTime = this.trainOpts.timeout
@@ -6037,8 +5594,6 @@
                 endTime,
             };
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         _calculateTrainingError(data) {
             if (!this.meanSquaredError) {
                 throw new Error('this.meanSquaredError not setup');
@@ -6059,17 +5614,11 @@
             }
             return result[0];
         }
-        // TODO: more types
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         formatData(data) {
             return data;
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         _calculateDeltas(target) {
             const lastLayerSet = this._layerSets[this._layerSets.length - 1];
-            // Iterate from the second to last layer backwards, propagating 0's
             for (let i = lastLayerSet.length - 2; i >= 0; i--) {
                 lastLayerSet[i].compare();
             }
@@ -6088,19 +5637,13 @@
                 _model[i].learn((_a = this.options.learningRate) !== null && _a !== void 0 ? _a : 0);
             }
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         _trainPatterns(data) {
             for (let i = 0; i < data.length; ++i) {
                 this._trainPattern(data[i], false);
             }
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         _trainPattern(inputs, logErrorRate) {
-            // forward propagate
             this.runInputs(inputs);
-            // back propagate
             this._calculateDeltas(inputs);
             this.adjustWeights();
             if (logErrorRate) {
@@ -6121,9 +5664,6 @@
         }
     }
 
-    /**
-     * A matrix
-     */
     class Matrix {
         constructor(rows, columns) {
             this.rows = 0;
@@ -6136,8 +5676,6 @@
             this.deltas = zeros$1(this.rows * this.columns);
         }
         getWeight(row, col) {
-            // slow but careful accessor function
-            // we want row-major order
             const ix = this.columns * row + col;
             if (ix < 0 || ix >= this.weights.length) {
                 throw new Error('get accessor is skewed');
@@ -6145,7 +5683,6 @@
             return this.weights[ix];
         }
         setWeight(row, col, v) {
-            // slow but careful accessor function
             const ix = this.columns * row + col;
             if (ix < 0 || ix >= this.weights.length) {
                 throw new Error('set accessor is skewed');
@@ -6154,8 +5691,6 @@
             return this;
         }
         getDelta(row, col) {
-            // slow but careful accessor function
-            // we want row-major order
             const ix = this.columns * row + col;
             if (ix < 0 || ix >= this.deltas.length) {
                 throw new Error('get accessor is skewed');
@@ -6163,7 +5698,6 @@
             return this.deltas[ix];
         }
         setDelta(row, col, v) {
-            // slow but careful accessor function
             const ix = this.columns * row + col;
             if (ix < 0 || ix >= this.weights.length) {
                 throw new Error('set accessor is skewed');
@@ -6253,8 +5787,6 @@
         }
     }
 
-    /** return Matrix but filled with random numbers from gaussian
-     */
     class RandomMatrix extends Matrix {
         constructor(rows, columns, std) {
             super(rows, columns);
@@ -6281,8 +5813,6 @@
             if (this.isSetup)
                 throw new Error('DataFormatter is already setup');
             this.values = values;
-            // go over all characters and keep track of all unique ones seen
-            // count up all characters
             this.buildCharactersFromIterable(values);
             this.buildTables(maxThreshold);
             if (values[0].input) {
@@ -6295,11 +5825,6 @@
             const tempCharactersTable = {};
             for (let dataFormatterIndex = 0, dataFormatterLength = values.length; dataFormatterIndex < dataFormatterLength; dataFormatterIndex++) {
                 const characters = values[dataFormatterIndex];
-                // if (typeof characters === 'string') {
-                //   const character = characters;
-                //   if (tempCharactersTable.hasOwnProperty(character)) continue;
-                //   tempCharactersTable[character] = true;
-                //   this.characters.push(character);
                 if (characters.hasOwnProperty('length')) {
                     const iteratable = characters;
                     for (let characterIndex = 0, charactersLength = iteratable.length; characterIndex < charactersLength; characterIndex++) {
@@ -6375,12 +5900,10 @@
             }
         }
         buildTables(maxThreshold) {
-            // filter by count threshold and create pointers
             const charactersLength = this.characters.length;
             for (let characterIndex = 0; characterIndex < charactersLength; characterIndex++) {
                 const character = this.characters[characterIndex];
                 if (characterIndex >= maxThreshold) {
-                    // add character to dataFormatter
                     this.indexTable[character] = characterIndex;
                     this.characterTable[characterIndex] = character;
                 }
@@ -6518,9 +6041,6 @@
                 specialIndexes: this.specialIndexes,
             };
         }
-        /** TODO: Type better, The type of json is not "string that is a valid JSON", it is a POJO in the shape of DataFormatter.
-         * this method re-hydrates the the data as an instance of DataFormatter.
-         */
         static fromJSON(json) {
             const dataFormatter = new DataFormatter();
             dataFormatter.indexTable = json.indexTable;
@@ -6625,9 +6145,6 @@ var dataFormatter = {
         product.deltas = left.deltas.slice(0);
     }
 
-    /**
-     * add {left} and {right} matrix weights into {into}
-     */
     function add(product, left, right) {
         for (let i = 0; i < left.weights.length; i++) {
             product.weights[i] = left.weights[i] + right.weights[i];
@@ -6635,9 +6152,6 @@ var dataFormatter = {
         }
     }
 
-    /**
-     * adds {from} deltas to {left} and {right} deltas
-     */
     function addB(product, left, right) {
         for (let i = 0; i < product.deltas.length; i++) {
             left.deltas[i] = product.deltas[i];
@@ -6645,9 +6159,6 @@ var dataFormatter = {
         }
     }
 
-    /**
-     * makes matrix weights and deltas all ones
-     */
     function allOnes(product) {
         for (let i = 0; i < product.weights.length; i++) {
             product.weights[i] = 1;
@@ -6666,22 +6177,15 @@ var dataFormatter = {
         }
     }
 
-    /**
-     * multiply {left} and {right} matrix weights to {into}
-     */
     function multiply(product, left, right) {
         const leftRows = left.rows;
         const leftColumns = left.columns;
         const rightColumns = right.columns;
-        // loop over rows of left
         for (let leftRow = 0; leftRow < leftRows; leftRow++) {
             const leftRowBase = leftColumns * leftRow;
             const rightRowBase = rightColumns * leftRow;
-            // loop over cols of right
             for (let rightColumn = 0; rightColumn < rightColumns; rightColumn++) {
-                // dot product loop
                 let dot = 0;
-                // loop over columns of left
                 for (let leftColumn = 0; leftColumn < leftColumns; leftColumn++) {
                     const rightColumnBase = rightColumns * leftColumn;
                     const leftIndex = leftRowBase + leftColumn;
@@ -6695,20 +6199,14 @@ var dataFormatter = {
         }
     }
 
-    /**
-     * multiplies {from} deltas to {left} and {right}
-     */
     function multiplyB(product, left, right) {
         const leftRows = left.rows;
         const leftColumns = left.columns;
         const rightColumns = right.columns;
-        // loop over rows of left
         for (let leftRowRoot = 0; leftRowRoot < leftRows; leftRowRoot++) {
             const leftRowBase = leftColumns * leftRowRoot;
             const rightRowBase = rightColumns * leftRowRoot;
-            // loop over cols of right
             for (let rightColumn = 0; rightColumn < rightColumns; rightColumn++) {
-                // loop over columns of left
                 for (let leftColumn = 0; leftColumn < leftColumns; leftColumn++) {
                     const rightColumnBase = rightColumns * leftColumn;
                     const leftRow = leftRowBase + leftColumn;
@@ -6729,9 +6227,6 @@ var dataFormatter = {
         }
     }
 
-    /**
-     * multiplies {left} and {right} weight by {from} deltas into {left} and {right} deltas
-     */
     function multiplyElementB(product, left, right) {
         for (let i = 0; i < left.weights.length; i++) {
             left.deltas[i] = right.weights[i] * product.deltas[i];
@@ -6739,10 +6234,6 @@ var dataFormatter = {
         }
     }
 
-    /**
-     *
-     * relu {m} weights to {into} weights
-     */
     function relu(product, left) {
         for (let i = 0; i < left.weights.length; i++) {
             product.weights[i] = Math.max(0, left.weights[i]); // relu
@@ -6750,9 +6241,6 @@ var dataFormatter = {
         }
     }
 
-    /**
-     * adds {from} deltas to {m} deltas when {m} weights are above other a threshold of 0
-     */
     function reluB(product, left) {
         for (let i = 0; i < product.deltas.length; i++) {
             left.deltas[i] = left.weights[i] > 0 ? product.deltas[i] : 0;
@@ -6768,9 +6256,6 @@ var dataFormatter = {
         }
     }
 
-    /**
-     * adds {from} deltas into {m} deltas
-     */
     function rowPluckB(product, left, rowIndex) {
         const { columns } = left;
         const rowBase = columns * rowIndex;
@@ -6780,16 +6265,11 @@ var dataFormatter = {
     }
 
     function sigmoid(product, left) {
-        // sigmoid nonlinearity
         for (let i = 0; i < left.weights.length; i++) {
             product.weights[i] = 1 / (1 + Math.exp(-left.weights[i]));
             product.deltas[i] = 0;
         }
     }
-    // function sig(x) {
-    //   // helper function for computing sigmoid
-    //   return 1 / (1 + Math.exp(-x));
-    // }
 
     function sigmoidB(product, left) {
         for (let i = 0; i < product.deltas.length; i++) {
@@ -6799,7 +6279,6 @@ var dataFormatter = {
     }
 
     function softmax(matrix) {
-        // probability volume
         const result = new Matrix(matrix.rows, matrix.columns);
         let maxVal = -999999;
         for (let i = 0; i < matrix.weights.length; i++) {
@@ -6815,14 +6294,10 @@ var dataFormatter = {
         for (let i = 0; i < matrix.weights.length; i++) {
             result.weights[i] /= s;
         }
-        // no backward pass here needed
-        // since we will use the computed probabilities outside
-        // to set gradients directly on m
         return result;
     }
 
     function tanh(product, left) {
-        // tanh nonlinearity
         for (let i = 0; i < left.weights.length; i++) {
             product.weights[i] = Math.tanh(left.weights[i]);
             product.deltas[i] = 0;
@@ -6831,7 +6306,6 @@ var dataFormatter = {
 
     function tanhB(product, left) {
         for (let i = 0; i < product.deltas.length; i++) {
-            // grad for z = tanh(x) is (1 - z^2)
             const mwi = product.weights[i];
             left.deltas[i] = (1 - mwi * mwi) * product.deltas[i];
         }
@@ -6879,18 +6353,12 @@ var dataFormatter = {
             });
             return product;
         }
-        /**
-         * connects two matrices together by subtract
-         */
         subtract(left, right) {
             if (left.weights.length !== right.weights.length) {
                 throw new Error('misaligned matrices');
             }
             return this.add(this.add(this.allOnes(left.rows, left.columns), this.cloneNegative(left)), right);
         }
-        /**
-         * connects two matrices together by multiply
-         */
         multiply(left, right) {
             if (left.columns !== right.rows) {
                 throw new Error('misaligned matrices');
@@ -6906,9 +6374,6 @@ var dataFormatter = {
             });
             return product;
         }
-        /**
-         * connects two matrices together by multiplyElement
-         */
         multiplyElement(left, right) {
             if (left.weights.length !== right.weights.length) {
                 throw new Error('misaligned matrices');
@@ -6924,9 +6389,6 @@ var dataFormatter = {
             });
             return product;
         }
-        /**
-         * connects a matrix to relu
-         */
         relu(matrix) {
             const product = new Matrix(matrix.rows, matrix.columns);
             this.states.push({
@@ -6938,9 +6400,6 @@ var dataFormatter = {
             });
             return product;
         }
-        /**
-         * input a matrix
-         */
         input(input) {
             this.states.push({
                 name: 'input',
@@ -6957,11 +6416,7 @@ var dataFormatter = {
             });
             return input;
         }
-        /**
-         * connects a matrix via a row
-         */
         inputMatrixToRow(matrix) {
-            // eslint-disable-next-line @typescript-eslint/no-this-alias
             const self = this;
             const product = new Matrix(matrix.columns, 1);
             this.states.push({
@@ -6976,9 +6431,6 @@ var dataFormatter = {
             });
             return product;
         }
-        /**
-         * connects a matrix to sigmoid
-         */
         sigmoid(matrix) {
             const product = new Matrix(matrix.rows, matrix.columns);
             this.states.push({
@@ -6990,9 +6442,6 @@ var dataFormatter = {
             });
             return product;
         }
-        /**
-         * connects a matrix to tanh
-         */
         tanh(matrix) {
             const product = new Matrix(matrix.rows, matrix.columns);
             this.states.push({
@@ -7004,10 +6453,6 @@ var dataFormatter = {
             });
             return product;
         }
-        /**
-         *
-         * Observe a matrix for debugging
-         */
         observe(matrix) {
             this.states.push({
                 name: 'observe',
@@ -7017,9 +6462,6 @@ var dataFormatter = {
             });
             return matrix;
         }
-        /**
-         * Run index through equations via forward propagation
-         */
         runIndex(rowIndex = 0) {
             this.inputRow = rowIndex;
             let state = this.states[0];
@@ -7031,9 +6473,6 @@ var dataFormatter = {
             }
             return state.product;
         }
-        /**
-         * Run value through equations via forward propagation
-         */
         runInput(inputValue) {
             this.inputValue = inputValue;
             let state = this.states[0];
@@ -7045,9 +6484,6 @@ var dataFormatter = {
             }
             return state.product;
         }
-        /**
-         * Run value through equations via back propagation
-         */
         backpropagate() {
             let i = this.states.length;
             let state = this.states[0];
@@ -7059,9 +6495,6 @@ var dataFormatter = {
             }
             return state.product;
         }
-        /**
-         * Run index through equations via back propagation
-         */
         backpropagateIndex(rowIndex = 0) {
             this.inputRow = rowIndex;
             let i = this.states.length;
@@ -7074,39 +6507,27 @@ var dataFormatter = {
             }
             return state.product;
         }
-        /**
-         * Predict a target value from equation
-         */
         predictTarget(input, target) {
             let errorSum = 0;
             const output = this.runInput(input);
             for (let i = 0; i < output.weights.length; i++) {
                 const error = output.weights[i] - target[i];
-                // set gradients into log probabilities
                 errorSum += Math.abs(error);
-                // write gradients into log probabilities
                 output.deltas[i] = error;
             }
             return errorSum;
         }
-        /**
-         * Predict a target index from equation
-         */
         predictTargetIndex(input, target) {
             const output = this.runIndex(input);
-            // set gradients into log probabilities
             const logProbabilities = output; // interpret output as log probabilities
             const probabilities = softmax(output); // compute the softmax probabilities
-            // write gradients into log probabilities
             logProbabilities.deltas = probabilities.weights.slice(0);
             logProbabilities.deltas[target] -= 1;
-            // accumulate base 2 log prob and do smoothing
             return -Math.log2(probabilities.weights[target]);
         }
     }
 
     function maxI(matrix) {
-        // argmax of array w
         const { weights } = matrix;
         let maxv = weights[0];
         let maxix = 0;
@@ -7121,8 +6542,6 @@ var dataFormatter = {
     }
 
     function sampleI(matrix) {
-        // sample argmax from w, assuming w are
-        // probabilities that sum to one
         const r = randomFloat(0, 1);
         const w = matrix.weights;
         let x = 0;
@@ -7196,11 +6615,9 @@ var dataFormatter = {
         createHiddenLayers() {
             const { hiddenLayers, inputSize } = this.options;
             const hiddenLayersModel = [];
-            // 0 is end, so add 1 to offset
             hiddenLayersModel.push(this.getHiddenLayer(hiddenLayers[0], inputSize));
             let prevSize = hiddenLayers[0];
             for (let d = 1; d < hiddenLayers.length; d++) {
-                // loop over depths
                 const hiddenSize = hiddenLayers[d];
                 hiddenLayersModel.push(this.getHiddenLayer(hiddenSize, prevSize));
                 prevSize = hiddenSize;
@@ -7209,11 +6626,8 @@ var dataFormatter = {
         }
         getHiddenLayer(hiddenSize, prevSize) {
             return {
-                // wxh
                 weight: new RandomMatrix(hiddenSize, prevSize, 0.08),
-                // whh
                 transition: new RandomMatrix(hiddenSize, hiddenSize, 0.08),
-                // bhh
                 bias: new Matrix(hiddenSize, 1),
             };
         }
@@ -7232,18 +6646,13 @@ var dataFormatter = {
                 throw new Error('this.options.inputRange not an expected number');
             if (inputSize < 1)
                 throw new Error('this.options.inputSize not an expected number');
-            // 0 is end, so add 1 to offset
             return new RandomMatrix(inputRange + 1, inputSize, 0.08);
         }
         createOutputMatrices() {
             const { outputSize, hiddenLayers } = this.options;
             const lastHiddenSize = last(hiddenLayers);
-            // 0 is end, so add 1 to offset
             return {
-                // whd
                 outputConnector: new RandomMatrix(outputSize + 1, lastHiddenSize, 0.08),
-                // 0 is end, so add 1 to offset
-                // bd
                 output: new Matrix(outputSize + 1, 1),
             };
         }
@@ -7255,10 +6664,8 @@ var dataFormatter = {
             const equationConnection = model.equationConnections.length > 0
                 ? last(model.equationConnections)
                 : this.initialLayerInputs;
-            // 0 index
             let output = this.getEquation(equation, equation.inputMatrixToRow(model.input), equationConnection[0], model.hiddenLayers[0]);
             outputs.push(output);
-            // 1+ indices
             for (let i = 1, max = hiddenLayers.length; i < max; i++) {
                 if (!equationConnection[i]) {
                     throw new Error(`Cannot find equation at index ${i}`);
@@ -7307,11 +6714,9 @@ var dataFormatter = {
             let log2ppl = 0;
             let equation;
             while (model.equations.length <= input.length + 1) {
-                // last is zero
                 this.bindEquation();
             }
             for (let inputIndex = -1, inputMax = input.length; inputIndex < inputMax; inputIndex++) {
-                // start and end tokens are zeros
                 const equationIndex = inputIndex + 1;
                 equation = model.equations[equationIndex];
                 const source = inputIndex === -1 ? 0 : input[inputIndex] + 1; // first step: start with START token
@@ -7347,9 +6752,7 @@ var dataFormatter = {
                 for (let i = 0; i < weights.length; i++) {
                     let r = deltas[i];
                     const w = weights[i];
-                    // rmsprop adaptive learning rate
                     cache[i] = cache[i] * decayRate + (1 - decayRate) * r * r;
-                    // gradient clip
                     if (r > clipval) {
                         r = clipval;
                         numClipped++;
@@ -7359,7 +6762,6 @@ var dataFormatter = {
                         numClipped++;
                     }
                     numTot++;
-                    // update (and regularize)
                     weights[i] =
                         w + (-learningRate * r) / Math.sqrt(cache[i] + smoothEps) - regc * w;
                 }
@@ -7397,17 +6799,10 @@ var dataFormatter = {
                     this.bindEquation();
                 }
                 const equation = model.equations[i];
-                // sample predicted letter
                 const outputMatrix = equation.runIndex(previousIndex);
                 const logProbabilities = new Matrix(model.output.rows, model.output.columns);
                 copy(logProbabilities, outputMatrix);
                 if (temperature !== 1 && isSampleI) {
-                    /**
-                     * scale log probabilities by temperature and re-normalize
-                     * if temperature is high, logProbabilities will go towards zero
-                     * and the softmax outputs will be more diffuse. if temperature is
-                     * very low, the softmax outputs will be more peaky
-                     */
                     for (let j = 0, max = logProbabilities.weights.length; j < max; j++) {
                         logProbabilities.weights[j] /= temperature;
                     }
@@ -7416,54 +6811,25 @@ var dataFormatter = {
                 const nextIndex = isSampleI ? sampleI(probs) : maxI(probs);
                 i++;
                 if (nextIndex === 0) {
-                    // END token predicted, break out
                     break;
                 }
                 if (i >= maxPredictionLength) {
-                    // something is wrong
                     break;
                 }
                 output.push(nextIndex);
             }
-            /**
-             * we slice the input length here, not because output contains it, but it will be erroneous as we are sending the
-             * network what is contained in input, so the data is essentially guessed by the network what could be next, till it
-             * locks in on a value.
-             * Kind of like this, values are from input:
-             * 0 -> 4 (or in English: "beginning on input" -> "I have no idea? I'll guess what they want next!")
-             * 2 -> 2 (oh how interesting, I've narrowed down values...)
-             * 1 -> 9 (oh how interesting, I've now know what the values are...)
-             * then the output looks like: [4, 2, 9,...]
-             * so we then remove the erroneous data to get our true output
-             */
             return this.options.dataFormatter.formatDataOut(input, output.slice(input.length).map((value) => value - 1));
         }
-        /**
-         *
-         * Verifies network sizes are initialized
-         * If they are not it will initialize them
-         */
         verifyIsInitialized() {
             if (!this.model.isInitialized) {
                 this.initialize();
             }
         }
-        /**
-         *
-         * @param options
-         *    Supports all `trainDefaults` properties
-         *    also supports:
-         *       learningRate: (number),
-         *       momentum: (number),
-         *       activation: 'sigmoid', 'relu', 'leaky-relu', 'tanh'
-         */
         updateTrainingOptions(options) {
             var _a;
             this.trainOpts = { ...trainDefaults$1, ...options };
             this.validateTrainingOptions(this.trainOpts);
             this.setLogMethod((_a = options.log) !== null && _a !== void 0 ? _a : this.trainOpts.log);
-            // TODO: Remove this?
-            // this.activation = options.activation || this.activation;
         }
         validateTrainingOptions(options) {
             const validations = {
@@ -7718,15 +7084,11 @@ var dataFormatter = {
                 return matrixOrigin(m, stateIndex);
             }
             function toInner(fnString) {
-                // crude, but should be sufficient for now
-                // function() { body }
                 const fnParts = fnString.toString().split('{');
                 fnParts.shift();
-                // body }
                 const fnBodyString = fnParts.join('{');
                 const fnBodyParts = fnBodyString.split('}');
                 fnBodyParts.pop();
-                // body
                 return fnBodyParts
                     .join('}')
                     .split('\n')
@@ -7847,7 +7209,6 @@ ${innerFunctionsSwitch.join('\n')}
   ${randomFloat.toString()}
   ${sampleI.toString()}
   ${maxI.toString()}`;
-            // eslint-disable-next-line
             return new Function('rawInput', 'isSampleI', 'temperature', cb ? cb(src) : src);
         }
         trainPattern(input, logErrorRate) {
@@ -7874,18 +7235,12 @@ ${innerFunctionsSwitch.join('\n')}
     }
     function getGRUHiddenLayer(hiddenSize, prevSize) {
         return {
-            // update Gate
-            // wzxh
             updateGateInputMatrix: new RandomMatrix(hiddenSize, prevSize, 0.08),
             updateGateHiddenMatrix: new RandomMatrix(hiddenSize, hiddenSize, 0.08),
             updateGateBias: new Matrix(hiddenSize, 1),
-            // reset Gate
-            // wrxh
             resetGateInputMatrix: new RandomMatrix(hiddenSize, prevSize, 0.08),
             resetGateHiddenMatrix: new RandomMatrix(hiddenSize, hiddenSize, 0.08),
             resetGateBias: new Matrix(hiddenSize, 1),
-            // cell write parameters
-            // wcxh
             cellWriteInputMatrix: new RandomMatrix(hiddenSize, prevSize, 0.08),
             cellWriteHiddenMatrix: new RandomMatrix(hiddenSize, hiddenSize, 0.08),
             cellWriteBias: new Matrix(hiddenSize, 1),
@@ -7910,14 +7265,9 @@ ${innerFunctionsSwitch.join('\n')}
         const tanh = equation.tanh.bind(equation);
         const allOnes = equation.allOnes.bind(equation);
         const cloneNegative = equation.cloneNegative.bind(equation);
-        // update gate
         const updateGate = sigmoid(add(add(multiply(hiddenLayer.updateGateInputMatrix, inputMatrix), multiply(hiddenLayer.updateGateHiddenMatrix, previousResult)), hiddenLayer.updateGateBias));
-        // reset gate
         const resetGate = sigmoid(add(add(multiply(hiddenLayer.resetGateInputMatrix, inputMatrix), multiply(hiddenLayer.resetGateHiddenMatrix, previousResult)), hiddenLayer.resetGateBias));
-        // cell
         const cell = tanh(add(add(multiply(hiddenLayer.cellWriteInputMatrix, inputMatrix), multiply(hiddenLayer.cellWriteHiddenMatrix, multiplyElement(resetGate, previousResult))), hiddenLayer.cellWriteBias));
-        // compute hidden state as gated, saturated cell activations
-        // negate updateGate
         return add(multiplyElement(add(allOnes(updateGate.rows, updateGate.columns), cloneNegative(updateGate)), cell), multiplyElement(previousResult, updateGate));
     }
 
@@ -7959,8 +7309,6 @@ ${innerFunctionsSwitch.join('\n')}
             this.inputLookup = null;
             this.outputLookup = null;
             this.outputLookupLength = 0;
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
             this.model = Object.seal({
                 isInitialized: false,
                 hiddenLayers: [],
@@ -7970,8 +7318,6 @@ ${innerFunctionsSwitch.join('\n')}
                 equationConnections: [],
                 outputConnector: new RandomMatrix(0, 0, 0.08),
             });
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
             this.options = defaults();
             this.options = { ...this.options, ...options };
             this.updateTrainingOptions({
@@ -7988,9 +7334,7 @@ ${innerFunctionsSwitch.join('\n')}
         createOutputMatrices() {
             const { outputSize } = this.options;
             const lastHiddenSize = last(this.options.hiddenLayers);
-            // whd
             const outputConnector = new RandomMatrix(outputSize, lastHiddenSize, 0.08);
-            // bd
             const output = new RandomMatrix(outputSize, 1, 0.08);
             return { output, outputConnector };
         }
@@ -8003,10 +7347,8 @@ ${innerFunctionsSwitch.join('\n')}
             const equationConnection = model.equationConnections.length > 0
                 ? model.equationConnections[model.equationConnections.length - 1]
                 : this.initialLayerInputs;
-            // 0 index
             let output = this.getEquation(equation, equation.input(new Matrix(inputSize, 1)), equationConnection[0], layers[0]);
             outputs.push(output);
-            // 1+ indices
             for (let i = 1, max = hiddenLayers.length; i < max; i++) {
                 output = this.getEquation(equation, output, equationConnection[i], layers[i]);
                 outputs.push(output);
@@ -8018,8 +7360,6 @@ ${innerFunctionsSwitch.join('\n')}
         initialize() {
             this.model = this.mapModel();
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         mapModel() {
             const allMatrices = [];
             this.initialLayerInputs = this.options.hiddenLayers.map((size) => new Matrix(size, 1));
@@ -8050,26 +7390,16 @@ ${innerFunctionsSwitch.join('\n')}
                 this.model.equations[i].backpropagate();
             }
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         run(rawInput) {
             const shape = lookup.dataShape(rawInput).join(',');
             switch (shape) {
                 case 'array,number':
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-expect-error
                     return this.runArray(rawInput);
                 case 'array,array,number':
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-expect-error
                     return this.runArrayOfArray(rawInput);
                 case 'object,number':
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-expect-error
                     return this.runObject(rawInput); // Backward compatibility, will be result of `unknown` and need casting.  Better to just use net.runObject() directly
                 case 'array,object,number':
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-expect-error
                     return this.runArrayOfObject(rawInput);
                 default:
                     throw new Error(`Unrecognized data shape ${shape}`);
@@ -8079,20 +7409,12 @@ ${innerFunctionsSwitch.join('\n')}
             const shape = lookup.dataShape(rawInput).join(',');
             switch (shape) {
                 case 'array,number':
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-expect-error
                     return this.forecastArray(rawInput, count);
                 case 'array,array,number':
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-expect-error
                     return this.forecastArrayOfArray(rawInput, count);
                 case 'object,number':
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-expect-error
                     return this.runObject(rawInput);
                 case 'array,object,number':
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-expect-error
                     return this.forecastArrayOfObject(rawInput, count);
                 default:
                     throw new Error(`Unrecognized data shape ${shape}`);
@@ -8163,14 +7485,11 @@ ${innerFunctionsSwitch.join('\n')}
             const formattedData = input.map((value) => lookup.toArray(this.inputLookup, value, this.inputLookupLength));
             return this.forecastArrayOfArray(formattedData, count).map((value) => lookup.toObject(this.outputLookup, value));
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         train(data, trainOpts = {}) {
             this.trainOpts = trainOpts = {
                 ...trainDefaults$1,
                 ...trainOpts,
             };
-            // Don't destructure here because this.setSize() can reset this.options.
             if (this.options.inputSize === 1 && this.options.outputSize === 1) {
                 this.setSize(data);
             }
@@ -8217,8 +7536,6 @@ ${innerFunctionsSwitch.join('\n')}
             this.end();
             return errorSum / input.length;
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         trainPattern(input, logErrorRate) {
             const error = this.trainArrayOfArray(input);
             this.backpropagate();
@@ -8237,13 +7554,11 @@ ${innerFunctionsSwitch.join('\n')}
                 case 'array,datum,array,number':
                 case 'array,datum,object,number':
                     size = 1;
-                    // probably 1
                     break;
                 case 'array,array,array,number':
                     size = data[0][0].length;
                     break;
                 case 'array,array,object,number':
-                    // inputs and outputs should match
                     size = Object.keys(lookup.toTable2D(data)).length;
                     break;
                 case 'array,datum,array,array,number':
@@ -8342,7 +7657,6 @@ ${innerFunctionsSwitch.join('\n')}
                 throw new Error('outputSize must be 1 for this data size');
             }
         }
-        // Handles data shape of 'array,number'
         formatArray(data) {
             const result = [];
             this.requireInputOutputOfOne();
@@ -8351,7 +7665,6 @@ ${innerFunctionsSwitch.join('\n')}
             }
             return [result];
         }
-        // Handles data shape of 'array,array,number'
         formatArrayOfArray(data) {
             const result = [];
             const { inputSize, outputSize } = this.options;
@@ -8372,7 +7685,6 @@ ${innerFunctionsSwitch.join('\n')}
             }
             return [result];
         }
-        // Handles data shape of 'array,object,number'
         formatArrayOfObject(data) {
             this.requireInputOutputOfOne();
             if (!this.inputLookup) {
@@ -8386,7 +7698,6 @@ ${innerFunctionsSwitch.join('\n')}
             }
             return result;
         }
-        // Handles data shape of 'array,object,number' when this.options.inputSize > 1
         formatArrayOfObjectMulti(data) {
             if (!this.inputLookup) {
                 const lookupTable = new LookupTable(data);
@@ -8401,7 +7712,6 @@ ${innerFunctionsSwitch.join('\n')}
             }
             return result;
         }
-        // Handles data shape of 'array,datum,array,number'
         formatArrayOfDatumOfArray(data) {
             const result = [];
             this.requireInputOutputOfOne();
@@ -8411,7 +7721,6 @@ ${innerFunctionsSwitch.join('\n')}
             }
             return result;
         }
-        // Handles data shape of 'array,datum,object,number'
         formatArrayOfDatumOfObject(data) {
             this.requireInputOutputOfOne();
             if (!this.inputLookup) {
@@ -8431,7 +7740,6 @@ ${innerFunctionsSwitch.join('\n')}
             }
             return result;
         }
-        // Handles data shape of 'array,array,array,number'
         formatArrayOfArrayOfArray(data) {
             const result = [];
             for (let i = 0; i < data.length; i++) {
@@ -8439,7 +7747,6 @@ ${innerFunctionsSwitch.join('\n')}
             }
             return result;
         }
-        // Handles data shape of 'array,array,object,number'
         formatArrayOfArrayOfObject(data) {
             if (!this.inputLookup) {
                 const lookupTable = new LookupTable(data);
@@ -8456,7 +7763,6 @@ ${innerFunctionsSwitch.join('\n')}
             }
             return result;
         }
-        // Handles data shape of 'array,datum,array,array,number'
         formatArrayOfDatumOfArrayOfArray(data) {
             const result = [];
             const { inputSize, outputSize } = this.options;
@@ -8472,7 +7778,6 @@ ${innerFunctionsSwitch.join('\n')}
             }
             return result;
         }
-        // 'Handles data shape of array,datum,array,object,number'
         formatArrayOfDatumOfArrayOfObject(data) {
             if (!this.inputLookup) {
                 const inputLookup = new ArrayLookupTable(data, 'input');
@@ -8494,8 +7799,6 @@ ${innerFunctionsSwitch.join('\n')}
             }
             return result;
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         formatData(data) {
             const dataShape = lookup.dataShape(data).join(',');
             switch (dataShape) {
@@ -8527,10 +7830,7 @@ ${innerFunctionsSwitch.join('\n')}
             }
         }
         test(data) {
-            // for classification problems
             const misclasses = [];
-            // run each pattern through the trained network and collect
-            // error and misclassification statistics
             let errorSum = 0;
             const formattedData = this.formatData(data);
             for (let i = 0; i < formattedData.length; i++) {
@@ -8542,7 +7842,6 @@ ${innerFunctionsSwitch.join('\n')}
                 for (let j = 0; j < output.length; j++) {
                     errorCount++;
                     const error = target[j] - output[j];
-                    // mse
                     errors += error * error;
                 }
                 errorSum += errors / errorCount;
@@ -8561,8 +7860,6 @@ ${innerFunctionsSwitch.join('\n')}
                 total: formattedData.length,
             };
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         addFormat(value) {
             var _a, _b, _c, _d, _e, _f;
             const dataShape = lookup.dataShape(value).join(',');
@@ -8622,8 +7919,6 @@ ${innerFunctionsSwitch.join('\n')}
                     throw new Error('unknown data shape or configuration');
             }
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         toJSON() {
             if (!this.model) {
                 this.initialize();
@@ -8650,13 +7945,10 @@ ${innerFunctionsSwitch.join('\n')}
                 outputLookupLength: this.outputLookupLength,
             };
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         fromJSON(json) {
             const { options } = json;
             const allMatrices = [];
             const hiddenLayers = [];
-            // backward compatibility for hiddenSizes
             json.hiddenLayers.forEach((hiddenLayer) => {
                 const layers = {};
                 for (const p in hiddenLayer) {
@@ -8669,8 +7961,6 @@ ${innerFunctionsSwitch.join('\n')}
             allMatrices.push(outputConnector);
             const output = Matrix.fromJSON(json.output);
             allMatrices.push(output);
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-expect-error
             this.options = { ...defaults(), ...options };
             this.inputLookup = json.inputLookup;
             this.inputLookupLength = json.inputLookupLength;
@@ -8689,8 +7979,6 @@ ${innerFunctionsSwitch.join('\n')}
             this.bindEquation();
             return this;
         }
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         toFunction(cb) {
             const { model, inputLookup, inputLookupLength, outputLookup, outputLookupLength, } = this;
             const { inputSize } = this.options;
@@ -8718,12 +8006,10 @@ ${innerFunctionsSwitch.join('\n')}
                                 if (j > -1) {
                                     return `typeof prevStates[${j}] === 'object' ? prevStates[${j}].product : new Matrix(${m.rows}, ${m.columns})`;
                                 }
-                            // eslint-disable-next-line no-fallthrough
                             case state.right:
                                 if (j > -1) {
                                     return `typeof prevStates[${j}] === 'object' ? prevStates[${j}].product : new Matrix(${m.rows}, ${m.columns})`;
                                 }
-                            // eslint-disable-next-line no-fallthrough
                             case state.product:
                                 return `new Matrix(${m.rows}, ${m.columns})`;
                             default:
@@ -8832,17 +8118,11 @@ ${innerFunctionsSwitch.join('\n')}
       }`;
             }
             function toInner(fnString) {
-                // crude, but should be sufficient for now
-                // function() { body }
-                // crude, but should be sufficient for now
-                // function() { body }
                 const fnParts = fnString.toString().split('{');
                 fnParts.shift();
-                // body }
                 const fnBodyString = fnParts.join('{');
                 const fnBodyParts = fnBodyString.split('}');
                 fnBodyParts.pop();
-                // body
                 return fnBodyParts
                     .join('}')
                     .split('\n')
@@ -8940,7 +8220,6 @@ ${innerFunctionsSwitch.join('\n')}
   ${randomFloat.toString()}
   ${sampleI.toString()}
   ${maxI.toString()}`;
-            // eslint-disable-next-line
             return new Function('rawInput', cb ? cb(src) : src);
         }
     }
@@ -8965,21 +8244,15 @@ ${innerFunctionsSwitch.join('\n')}
     }
     function getHiddenLSTMLayer(hiddenSize, prevSize) {
         return {
-            // gates parameters
-            // wix
             inputMatrix: new RandomMatrix(hiddenSize, prevSize, 0.08),
             inputHidden: new RandomMatrix(hiddenSize, hiddenSize, 0.08),
             inputBias: new Matrix(hiddenSize, 1),
-            // wfx
             forgetMatrix: new RandomMatrix(hiddenSize, prevSize, 0.08),
             forgetHidden: new RandomMatrix(hiddenSize, hiddenSize, 0.08),
             forgetBias: new Matrix(hiddenSize, 1),
-            // wox
             outputMatrix: new RandomMatrix(hiddenSize, prevSize, 0.08),
             outputHidden: new RandomMatrix(hiddenSize, hiddenSize, 0.08),
             outputBias: new Matrix(hiddenSize, 1),
-            // cell write params
-            // wcx
             cellActivationMatrix: new RandomMatrix(hiddenSize, prevSize, 0.08),
             cellActivationHidden: new RandomMatrix(hiddenSize, hiddenSize, 0.08),
             cellActivationBias: new Matrix(hiddenSize, 1),
@@ -9007,15 +8280,11 @@ ${innerFunctionsSwitch.join('\n')}
         const tanh = equation.tanh.bind(equation);
         const inputGate = sigmoid(add(add(multiply(hiddenLayer.inputMatrix, inputMatrix), multiply(hiddenLayer.inputHidden, previousResult)), hiddenLayer.inputBias));
         const forgetGate = sigmoid(add(add(multiply(hiddenLayer.forgetMatrix, inputMatrix), multiply(hiddenLayer.forgetHidden, previousResult)), hiddenLayer.forgetBias));
-        // output gate
         const outputGate = sigmoid(add(add(multiply(hiddenLayer.outputMatrix, inputMatrix), multiply(hiddenLayer.outputHidden, previousResult)), hiddenLayer.outputBias));
-        // write operation on cells
         const cellWrite = tanh(add(add(multiply(hiddenLayer.cellActivationMatrix, inputMatrix), multiply(hiddenLayer.cellActivationHidden, previousResult)), hiddenLayer.cellActivationBias));
-        // compute new cell activation
         const retainCell = multiplyElement(forgetGate, previousResult); // what do we keep from cell
         const writeCell = multiplyElement(inputGate, cellWrite); // what do we write to cell
         const cell = add(retainCell, writeCell); // new cell contents
-        // compute hidden state as gated, saturated cell activations
         return multiplyElement(outputGate, tanh(cell));
     }
 
@@ -9028,12 +8297,6 @@ ${innerFunctionsSwitch.join('\n')}
         }
     }
 
-    /**
-     *
-     * @param start
-     * @param end
-     * @returns {Array}
-     */
     function range(start, end) {
         const result = [];
         for (; start < end; start++) {
@@ -9243,7 +8506,6 @@ ${innerFunctionsSwitch.join('\n')}
         };
     }
     function wrapOuterSVG(svgBody, width, height) {
-        // language=html
         return `<svg
             xmlns="http://www.w3.org/2000/svg"
             xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -9315,22 +8577,18 @@ ${innerFunctionsSwitch.join('\n')}
     function toSVG(net, options) {
         const mergedOptions = { ...defaultOptions(), ...options };
         const { width, height, inputs } = mergedOptions;
-        // Get network size array for NeuralNetwork or NeuralNetworkGPU
         let sizes = [];
         if (net instanceof NeuralNetwork || net instanceof NeuralNetworkGPU) {
             sizes = getNeuralNetworkSizes(net);
         }
-        // get network size for Recurrent
         else if (net instanceof Recurrent) {
             const { inputSize, hiddenLayers, outputSize } = getRecurrentLayers(net);
             sizes = [inputSize].concat(hiddenLayers).concat([outputSize]);
         }
-        // get network size for FeedForward
         else if (net instanceof FeedForward) {
             const { inputSize, hiddenLayers, outputSize } = getFeedForwardLayers(net);
             sizes = [inputSize].concat(hiddenLayers).concat([outputSize]);
         }
-        // handle json, recurrent first
         else if (net instanceof RNN ||
             net instanceof LSTM ||
             net instanceof GRU ||
@@ -9342,7 +8600,6 @@ ${innerFunctionsSwitch.join('\n')}
                 sizes: checkSizes(getRNNSizes(net), inputs.labels),
             }), width, height);
         }
-        // handle json, NeuralNetwork
         else if (net.hasOwnProperty('type')) {
             switch (net.type) {
                 case 'NeuralNetwork':
@@ -9435,4 +8692,3 @@ ${innerFunctionsSwitch.join('\n')}
     Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
-//# sourceMappingURL=browser.js.map
